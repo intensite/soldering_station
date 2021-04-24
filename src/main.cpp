@@ -161,6 +161,10 @@ SimpleKalmanFilter kf_HG = SimpleKalmanFilter(32, 32, 0.01);
   fan_pwm_value = safeHeatGunFan(hGThermo, fanEncoderPosCount);
   analogWrite(hGFanPWMPin,fan_pwm_value);
 
+/*************************************************************************************************
+ * Handle the rotary encoder settings button using interrupt service routine (ISR_2 bellow)
+ * 
+ */
    int buttonStatus = digitalRead(SW);
    if ( buttonStatus == LOW && buttonStatus != buttonLast )
    {
@@ -183,8 +187,9 @@ SimpleKalmanFilter kf_HG = SimpleKalmanFilter(32, 32, 0.01);
      prevSolderIronEncoderPos = sIEncoderPosCount;
 
    } else {
-     noTone(buzzer);     // Stop sound...
+     noTone(buzzer);     // Stop timeout alarm when the user touches the settings button ...
    }
+   /***************************************************************************************************/
 
    // Update the display
    processDisplay(sI_out, hG_out);
@@ -194,6 +199,10 @@ SimpleKalmanFilter kf_HG = SimpleKalmanFilter(32, 32, 0.01);
   // pinALast = aVal;
  } 
 
+/***
+ * Interrupt service routine to listen/watch the rotary encoder operations by the user
+ * 
+ */
 void ISR_2() {
     clk_State = digitalRead(pinA); //pin 2 state, clock pin? 
     dt_State =  digitalRead(pinB); //pin 3 state, DT pin? 
@@ -296,6 +305,11 @@ void processDisplay(int sI_out, int hG_out) {
   }
 }
 
+
+/**
+ * Handle the timout timer to power off the heating elements if left idle for MAX_CONTDOWN_MINUTES 
+ * 
+ */
 int processTimer() {
   
     //  if one second has passed
@@ -320,7 +334,7 @@ int processTimer() {
 }
 
 /**
- * Used to check if it is save to shutdown the heatgun fan
+ * Used to check if it is safe to shutdown the heatgun fan
  * Force the fan to saty ON if the heatgun is still too hot
  * to prevent damages
  */
