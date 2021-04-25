@@ -3,11 +3,19 @@
 #include <Wire.h>
 #include <LiquidCrystal_I2C.h>
 #include <SimpleKalmanFilter.h>
+#include <EEPROM.h>
 
 #define MAX_CONTDOWN_MINUTES        15
 #define HEATGUN_TEMP_FAN_SHUTDOWN   60
 #define MIN_HOT_HG_FAN_SPEED        50
- 
+
+const int PRESET_1_ADDRESS = 0X00;
+const int PRESET_2_ADDRESS = 0X06;
+const int PRESET_3_ADDRESS = 0X0C;
+
+int preset_1 [3];
+int preset_2 [3];
+int preset_3 [3];
 /*
  The circuit:
  * LCD RS pin to digital pin D12
@@ -102,6 +110,9 @@ SimpleKalmanFilter kf_HG = SimpleKalmanFilter(32, 32, 0.01);
   // set up the LCD's number of columns and rows:
   lcd.init();
   lcd.backlight();
+
+  // Read presets values from the EEPROM
+  readPresets();
  } 
 
  void loop() { 
@@ -346,4 +357,27 @@ int safeHeatGunFan(int heatGunTmp, int fanSetpoint) {
     return fanSetpoint;
   }
 
+}
+
+/**
+ * Read the Presets values for the 3 buttons from the EEPROM non volatile memory
+ * Each button as 3 values for SolderingIron, HeatGun, and Fan blower
+ * 
+ */
+void readPresets(void) {
+  EEPROM.get( PRESET_1_ADDRESS, preset_1 );
+  EEPROM.get( PRESET_2_ADDRESS, preset_2 );
+  EEPROM.get( PRESET_3_ADDRESS, preset_3 );
+}
+
+
+/**
+ * Save/Update the Presets values for the 3 buttons to the EEPROM non volatile memory
+ * Each button as 3 values for SolderingIron, HeatGun, and Fan blower
+ * 
+ */
+void savePresets(void) {
+  EEPROM.put( PRESET_1_ADDRESS, preset_1 );
+  EEPROM.put( PRESET_2_ADDRESS, preset_2 );
+  EEPROM.put( PRESET_3_ADDRESS, preset_3 );
 }
