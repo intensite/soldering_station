@@ -112,7 +112,7 @@ SimpleKalmanFilter kf_HG = SimpleKalmanFilter(32, 32, 0.01);
   lcd.backlight();
 
   // Read presets values from the EEPROM
-  readPresets();
+  // readPresets();
  } 
 
  void loop() { 
@@ -127,10 +127,11 @@ SimpleKalmanFilter kf_HG = SimpleKalmanFilter(32, 32, 0.01);
    sIRawValue = sIThermo;
    sIThermo = kf.updateEstimate(sIThermo);
    
-   sIThermo = (int) (0.833333 *sIThermo - 152); // use [3]  // linear fit {{216, 28}, {402, 183}}
+  // {Xi set temperature, Yi temperature measured by an external device}:  linear fit {40,52},{80,95},{100,125},{160,195}
+  //  sIThermo = (int) (0.833333 *sIThermo - 152); // use [3]  // linear fit {{216, 28}, {402, 183}}
+  sIThermo = (int) (0.848223 *sIThermo - 181.806); // use [3]  // linear fit {224,21},{280,50},{320,70},{400,170}
 
-   // {Xi set temperature, Yi temperature measured by an external device}:  linear fit {40,52},{80,95},{100,125},{160,195}
-   //1.202 * x+2.56
+
    hGThermo = analogRead(hGThermoPin); // Reads the value from the specified analog pin, ADC will map input voltages between 0V and 5V  into integer values between 0 and 1023
    hGThermo = kf_HG.updateEstimate(hGThermo);
    hGThermo = (int)(2.62026 *hGThermo + 26.3331);
