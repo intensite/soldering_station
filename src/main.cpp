@@ -5,9 +5,11 @@
 #include <SimpleKalmanFilter.h>
 #include <EEPROM.h>
 
-#define MAX_CONTDOWN_MINUTES        15
-#define HEATGUN_TEMP_FAN_SHUTDOWN   60
-#define MIN_HOT_HG_FAN_SPEED        50
+#define MAX_CONTDOWN_MINUTES            15
+#define HEATGUN_TEMP_FAN_SHUTDOWN       60
+#define MIN_HOT_HG_FAN_SPEED            50
+#define MAX_SAFE_HOT_HG_TEMPERATURE_C   500
+#define MAX_SAFE_SI_TEMPERATURE_C       500
 
 const int PRESET_1_ADDRESS = 0X00;
 const int PRESET_2_ADDRESS = 0X06;
@@ -38,6 +40,7 @@ void ISR_2();
 void processDisplay(int sI_out, int hG_out);
 int processTimer();
 int safeHeatGunFan(int heatGunTmp, int fanSetpoint);
+void alarmSound(void);
 
 const int buzzer = 11; //buzzer to arduino pin 11
 
@@ -134,7 +137,8 @@ SimpleKalmanFilter kf_HG = SimpleKalmanFilter(32, 32, 0.01);
 
    hGThermo = analogRead(hGThermoPin); // Reads the value from the specified analog pin, ADC will map input voltages between 0V and 5V  into integer values between 0 and 1023
    hGThermo = kf_HG.updateEstimate(hGThermo);
-   hGThermo = (int)(2.62026 *hGThermo + 26.3331);
+  //  hGThermo = (int)(2.62026 *hGThermo + 26.3331);
+   hGThermo = (int)(0.848223 *sIThermo - 181.806);
 
    int setPointDiff;  // Used for the 3 differents setPoints
 
@@ -144,24 +148,36 @@ SimpleKalmanFilter kf_HG = SimpleKalmanFilter(32, 32, 0.01);
    setPointDiff = setPointDiff > 0 ? setPointDiff : 0;
    
    int sI_out;
-   
-   if (setPointDiff) 
+
+   // Security cutoff (in case of thermal runnaway)
+  if(sIThermo >= MAX_SAFE_SI_TEMPERATURE_C  || (sIThermo < 0 && sIEncoderPosCount == 0)) {
+    digitalWrite(sIHeatingElementPin,LOW);
+    alarmSound();
+  } else {
+   if (setPointDiff && (sIEncoderPosCount > 0)) 
      sI_out = HIGH;
    else
      sI_out = LOW;
    
    digitalWrite(sIHeatingElementPin,sI_out);
-
+  }
    //thermostat 2
    setPointDiff = hGEncoderPosCount - hGThermo;
    setPointDiff = setPointDiff > 0 ? setPointDiff : 0;
-   int hG_out;
-   if (setPointDiff) 
-     hG_out = HIGH;
-   else
-     hG_out = LOW;
 
-   digitalWrite(hGHeatingElementPin,hG_out);
+  int hG_out;
+   // Security cutoff (in case of thermal runnaway)
+  if(hGThermo >= MAX_SAFE_HOT_HG_TEMPERATURE_C || (hGThermo < 0 && hGEncoderPosCount == 0)) {
+    digitalWrite(hGHeatingElementPin,LOW);
+    alarmSound();
+  } else {
+    if (setPointDiff && (hGEncoderPosCount > 0)) 
+      hG_out = HIGH;
+    else
+      hG_out = LOW;
+
+    digitalWrite(hGHeatingElementPin,hG_out);
+  }
 
    //setting fan speed
   //  setPointDiff = fanEncoderPosCount;
@@ -381,4 +397,32 @@ void savePresets(void) {
   EEPROM.put( PRESET_1_ADDRESS, preset_1 );
   EEPROM.put( PRESET_2_ADDRESS, preset_2 );
   EEPROM.put( PRESET_3_ADDRESS, preset_3 );
+}
+
+void alarmSound(void) {
+
+    return;
+
+     // Sounds the buzzer at the frequency relative to the note C in Hz
+    tone(buzzer,261);    
+    // Waits some time to turn off
+    delay(200);
+    //Turns the buzzer off
+    noTone(buzzer); 
+    // Sounds the buzzer at the frequency relative to the note D in Hz   
+    tone(buzzer,293);             
+    delay(200);    
+    noTone(buzzer); 
+    // Sounds the buzzer at the frequency relative to the note E in Hz
+    tone(buzzer,329);      
+    delay(200);
+    noTone(buzzer);     
+    // Sounds the buzzer at the frequency relative to the note F in Hz
+    tone(buzzer,349);    
+    delay(200);    
+    noTone(buzzer); 
+    // Sounds the buzzer at the frequency relative to the note G in Hz
+    tone(buzzer,392);            
+    delay(200);
+    noTone(buzzer); 
 }
