@@ -94,7 +94,7 @@ int current_countdown = MAX_CONTDOWN_MINUTES * 60;
 
 int cyclesCount = 0;
 SimpleKalmanFilter kf = SimpleKalmanFilter(30, 30, 0.01);
-SimpleKalmanFilter kf_HG = SimpleKalmanFilter(32, 32, 0.01);
+SimpleKalmanFilter kf_HG = SimpleKalmanFilter(50, 50, 0.01);
 
  void setup() { 
    pinMode (pinA,INPUT_PULLUP); 
@@ -137,9 +137,8 @@ SimpleKalmanFilter kf_HG = SimpleKalmanFilter(32, 32, 0.01);
 
    hGThermo = analogRead(hGThermoPin); // Reads the value from the specified analog pin, ADC will map input voltages between 0V and 5V  into integer values between 0 and 1023
    hGThermo = kf_HG.updateEstimate(hGThermo);
-  //  hGThermo = (int)(2.62026 *hGThermo + 26.3331);
-   hGThermo = (int)(0.848223 *sIThermo - 181.806);
-
+   hGThermo = (int)(0.434286 *hGThermo + 18.4286);  // R1:1K,  R2:100K  Gain: 101x
+    
    int setPointDiff;  // Used for the 3 differents setPoints
 
    //thermostats are implemented by using an on-off controller
@@ -368,11 +367,14 @@ int processTimer() {
  */
 int safeHeatGunFan(int heatGunTmp, int fanSetpoint) {
 
+/** WARNING DISABLED FOR DEBUG ONLY 
   if(heatGunTmp >= HEATGUN_TEMP_FAN_SHUTDOWN) {
     return MIN_HOT_HG_FAN_SPEED;
   } else {
     return fanSetpoint;
   }
+*/  
+return fanSetpoint;
 
 }
 

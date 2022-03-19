@@ -10,4 +10,5 @@ More design details to come...
 
 
 Least-squares best fit:
-0.349376 x - 0.699525
+linear fit{100,60},{150,85},{200,105},{250,126},{300,153},{350,170},{400,190}
+hGThermo = (int)(0.434286 *hGThermo + 18.4286);  // R1:1K,  R2:100K  Gain: 101x
